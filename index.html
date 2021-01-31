@@ -21,7 +21,6 @@
       <!-- bootstrap のコンテナ -->
       <div class="container">
         <div style="padding: 10px"></div>
-        <!-- <button type="button" class="btn dropdown-toggle">都道府県</button> -->
         
         <!-- 都道府県選択 -->
         <select v-model="prefSelect">
@@ -40,9 +39,8 @@
           </option>
         </select> 
 
-
         <button v-on:click="callAPI" type="button" class="btn btn-primary">
-          API取得
+          地価検索
         </button>
         <div style="padding: 10px"></div>
         <table class="table table-striped">
@@ -87,13 +85,25 @@
             cityOptions: {
               12: [
                 // 千葉県
+                { text: "松戸", value: "12207" },
+                { text: "柏", value: "12217" },
+                { text: "船橋", value: "12204" },
+                { text: "習志野", value: "12216" },
+                { text: "市川", value: "12203" },
                 { text: "佐倉", value: "12212" },
-                { text: "八千代", value: "12221" },
-                { text: "船橋", value: "" }
+                { text: "八千代", value: "12221" }
               ],
               11: [
                 // 埼玉県
-                { text: "戸田", value: "11224" }
+                { text: "川口", value: "11203" },
+                { text: "戸田", value: "11224" },
+                { text: "蕨", value: "11223" },
+                { text: "さいたま", value: "11100" },
+                { text: "志木", value: "11228" },
+                { text: "和光", value: "11229" },
+                { text: "新座", value: "11230" },
+                { text: "富士見", value: "11235" },
+                { text: "ふじみ野", value: "11245" }
               ],
             },
           };
@@ -105,15 +115,17 @@
           callAPI() {
             let url = new URL(
               "https://www.land.mlit.go.jp/webland/api/TradeListSearch?from=20201&to=20204");
+
+            if(this.citySelect.length != 5) {
+              alert("市区町村コードが5桁じゃないよ。");
+              return;
+            }
+
             url.searchParams.set("area",this.prefSelect);
             url.searchParams.set("city",this.citySelect);
 
-            //console.log(this.prefSelect);
-            //console.log(this.citySelect);
-            
             axios.get(url).then((response) => {
               this.infos = response.data.data;
-              //console.log(this.infos);
               this.formatData();
             }).catch(err =>{
                 alert("APIエラー");
@@ -121,7 +133,6 @@
           },
           formatData() {
             this.infos.forEach((val) => {
-              //console.log(val.Type)
               //単価の計算
               val.UnitPriceS = this.getUnitPrice(val.Area, val.TradePrice);
             });
