@@ -15,58 +15,63 @@
       integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
       crossorigin="anonymous"
     />
+    <!-- loading css-->
+    <link rel="stylesheet" type="text/css" href="./css/loading.css" />
   </head>
   <body>
     <div id="app">
       <!-- bootstrap のコンテナ -->
       <div class="container">
         <div style="padding: 10px"></div>
-        
+
         <!-- 都道府県選択 -->
         <select v-model="prefSelect">
           <option value="">--- 選択してください ---</option>
           <option v-for="opt in prefOptions" v-bind:value="opt.value">
             {{opt.text}}
           </option>
-          <span>first Selected: {{ prefSelect }}</span>
         </select>
 
-        <!-- 市区町村選択　--> 
+        <!-- 市区町村選択　-->
         <select v-model="citySelect">
           <option value="">--- 選択してください ---</option>
-          <option v-for="opt in cityOptions[prefSelect]" v-bind:value="opt.value">
+          <option
+            v-for="opt in cityOptions[prefSelect]"
+            v-bind:value="opt.value"
+          >
             {{opt.text}}
           </option>
-        </select> 
+        </select>
 
         <button v-on:click="callAPI" type="button" class="btn btn-primary">
           地価検索
         </button>
         <div style="padding: 10px"></div>
-        <table class="table table-striped">
-          <caption>
-            千葉か埼玉に家買うぞ2021
-          </caption>
-          <tr>
-            <th>タイプ</th>
-            <th>場所</th>
-            <th>総額</th>
-            <th>面積(m2)</th>
-            <th>単価(m2)</th>
-          </tr>
-          <tr v-for="info in this.infos">
-            <!-- divに対しての配列操作はダメっぽい -->
-            <td>【{{info.Type}}】</td>
-            <td>
-              {{info.Prefecture}}{{info.Municipality}}{{info.DistrictName}}
-            </td>
-            <td>{{info.TradePrice | addComma}}</td>
-            <td>{{info.Area}}</td>
-            <!-- <td>{{info.UnitPrice | addComma}}</td>  APIの数字より自分で計算するか。 -->
-            <td>{{info.UnitPriceS | addComma}}</td>
-            <!-- APIの数字より自分で計算するか。 -->
-          </tr>
-        </table>
+        <div v-if="loading" class="loader">おまち</div>
+          <table v-if="!loading" class="table table-striped">
+            <caption>
+              千葉か埼玉に家買うぞ2021
+            </caption>
+            <tr>
+              <th>タイプ</th>
+              <th>場所</th>
+              <th>総額</th>
+              <th>面積(m2)</th>
+              <th>単価(m2)</th>
+            </tr>
+            <tr v-for="info in this.infos">
+              <!-- divに対しての配列操作はダメっぽい -->
+              <td>【{{info.Type}}】</td>
+              <td>
+                {{info.Prefecture}}{{info.Municipality}}{{info.DistrictName}}
+              </td>
+              <td>{{info.TradePrice | addComma}}</td>
+              <td>{{info.Area}}</td>
+              <!-- <td>{{info.UnitPrice | addComma}}</td>  APIの数字より自分で計算するか。 -->
+              <td>{{info.UnitPriceS | addComma}}</td>
+              <!-- APIの数字より自分で計算するか。 -->
+            </tr>
+          </table>
       </div>
     </div>
     <script>
@@ -74,10 +79,11 @@
         el: "#app",
         data: function () {
           return {
+            loading: false,
             infos: null,
             //selectPrefecture: [{ text: "千葉", id: 1 }],
-            prefSelect:"",
-            citySelect:"",
+            prefSelect: "",
+            citySelect: "",
             prefOptions: [
               { text: "千葉", value: "12" },
               { text: "埼玉", value: "11" },
@@ -91,7 +97,7 @@
                 { text: "習志野", value: "12216" },
                 { text: "市川", value: "12203" },
                 { text: "佐倉", value: "12212" },
-                { text: "八千代", value: "12221" }
+                { text: "八千代", value: "12221" },
               ],
               11: [
                 // 埼玉県
@@ -103,7 +109,7 @@
                 { text: "和光", value: "11229" },
                 { text: "新座", value: "11230" },
                 { text: "富士見", value: "11235" },
-                { text: "ふじみ野", value: "11245" }
+                { text: "ふじみ野", value: "11245" },
               ],
             },
           };
@@ -113,23 +119,31 @@
             alert(this.infos);
           },
           callAPI() {
-            let url = new URL(
-              "https://www.land.mlit.go.jp/webland/api/TradeListSearch?from=20201&to=20204");
+            this.loading=true;
 
-            if(this.citySelect.length != 5) {
+            let url = new URL(
+              "https://www.land.mlit.go.jp/webland/api/TradeListSearch?from=20201&to=20204"
+            );
+
+            if (this.citySelect.length != 5) {
               alert("市区町村コードが5桁じゃないよ。");
               return;
             }
 
-            url.searchParams.set("area",this.prefSelect);
-            url.searchParams.set("city",this.citySelect);
+            url.searchParams.set("area", this.prefSelect);
+            url.searchParams.set("city", this.citySelect);
 
-            axios.get(url).then((response) => {
-              this.infos = response.data.data;
-              this.formatData();
-            }).catch(err =>{
+            axios
+              .get(url)
+              .then((response) => {
+                this.infos = response.data.data;
+                this.formatData();
+                this.loading=false;
+              })
+              .catch((err) => {
                 alert("APIエラー");
-            });
+                this.loading=false;
+              });
           },
           formatData() {
             this.infos.forEach((val) => {
